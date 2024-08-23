@@ -8,7 +8,7 @@ RED_LED_PIN = 17
 GREEN_LED_PIN = 27 
 YELLOW_LED_PIN = 22
 SPEAKER_PIN = 18  
-DOORLOCK_PIN = 21  # 전자식 도어락 제어 핀
+DOORLOCK_PIN = 21 
 
 # GPIO 모드 설정
 GPIO.setmode(GPIO.BCM)
@@ -25,11 +25,11 @@ alert_sound = pygame.mixer.Sound("alert.wav")  # 재생할 파일 다운받아�
 # 키패드 설정
 inputKeys = 16  # 버튼 16개 사용
 keyPressed = 0  # 키패드 초기화
-SCL_PIN = 6  # SCL 6번 핀에 연결
-SD0_PIN = 5  # SD0 5번 핀에 연결
+SCL_PIN = 6  
+SD0_PIN = 5 
 
-GPIO.setup(SCL_PIN, GPIO.OUT)  # SCL 핀 출력으로 설정
-GPIO.setup(SD0_PIN, GPIO.IN)   # SD0 핀 입력으로 설정
+GPIO.setup(SCL_PIN, GPIO.OUT)
+GPIO.setup(SD0_PIN, GPIO.IN)
 
 def getKey():
     global keyPressed
@@ -91,14 +91,14 @@ def passwordin():
 
 def activate_system(signal):
     if signal == 0:
-        GPIO.output(DOORLOCK_PIN, GPIO.LOW)  # 도어락 잠금
-        GPIO.output(RED_LED_PIN, GPIO.HIGH)  # 빨간 LED 켜기
+        GPIO.output(DOORLOCK_PIN, GPIO.LOW) 
+        GPIO.output(RED_LED_PIN, GPIO.HIGH) 
         GPIO.output(GREEN_LED_PIN, GPIO.LOW)
         GPIO.output(YELLOW_LED_PIN, GPIO.LOW)
     elif signal == 1:
-        GPIO.output(DOORLOCK_PIN, GPIO.HIGH)  # 도어락 열림
+        GPIO.output(DOORLOCK_PIN, GPIO.HIGH) 
         GPIO.output(RED_LED_PIN, GPIO.LOW) 
-        GPIO.output(GREEN_LED_PIN, GPIO.HIGH)  # 초록 LED 켜기
+        GPIO.output(GREEN_LED_PIN, GPIO.HIGH) 
         GPIO.output(YELLOW_LED_PIN, GPIO.LOW)
 
 try:
@@ -106,9 +106,9 @@ try:
     GPIO.output(DOORLOCK_PIN, GPIO.LOW)
     
     while True:
-        signal = passwordin()  # 비밀번호 입력 및 확인
+        signal = passwordin()  
         activate_system(signal)
-        time.sleep(2)  # 시스템 유지 시간
+        time.sleep(2)
 
 except KeyboardInterrupt:
     print("사용자에 의한 종료")
