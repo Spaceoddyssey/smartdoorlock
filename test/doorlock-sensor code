@@ -76,7 +76,7 @@ def passwordin():
                 print(f"입력된 비밀번호: {inputPassword}")
                 
                 if check_password(inputPassword):
-                    print("비밀번호가 맞습니다.")
+                    print("비밀번호가 맞습니다.") #터미널에서의 디버깅 도구로 사용할 문구들~
                     return 1  # 비밀번호 일치, 신호 1 반환
                 else:
                     print("비밀번호가 틀렸습니다.")
