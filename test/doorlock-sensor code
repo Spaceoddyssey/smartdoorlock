@@ -1,0 +1,118 @@
+import RPi.GPIO as GPIO
+import time
+import pygame
+from password_config import PASSWORD  # 기존 파일에서 암호를 불러옴
+
+# 핀 번호 설정
+RED_LED_PIN = 17    
+GREEN_LED_PIN = 27 
+YELLOW_LED_PIN = 22
+SPEAKER_PIN = 18  
+DOORLOCK_PIN = 21  # 전자식 도어락 제어 핀
+
+# GPIO 모드 설정
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RED_LED_PIN, GPIO.OUT)
+GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
+GPIO.setup(YELLOW_LED_PIN, GPIO.OUT)
+GPIO.setup(SPEAKER_PIN, GPIO.OUT)
+GPIO.setup(DOORLOCK_PIN, GPIO.OUT)
+
+# 스피커 초기화
+pygame.mixer.init()
+alert_sound = pygame.mixer.Sound("alert.wav")  # 재생할 파일 다운받아놔야함!!
+
+# 키패드 설정
+inputKeys = 16  # 버튼 16개 사용
+keyPressed = 0  # 키패드 초기화
+SCL_PIN = 6  # SCL 6번 핀에 연결
+SD0_PIN = 5  # SD0 5번 핀에 연결
+
+GPIO.setup(SCL_PIN, GPIO.OUT)  # SCL 핀 출력으로 설정
+GPIO.setup(SD0_PIN, GPIO.IN)   # SD0 핀 입력으로 설정
+
+def getKey():
+    global keyPressed
+    button = 0
+    keyState = 0
+    time.sleep(0.05)
+
+    for i in range(inputKeys):
+        GPIO.output(SCL_PIN, GPIO.LOW)
+        
+        if not GPIO.input(SD0_PIN):
+            keyState = i + 1
+        
+        GPIO.output(SCL_PIN, GPIO.HIGH)
+    
+    if keyState > 0 and keyState != keyPressed:
+        button = keyState
+        keyPressed = keyState
+    else:
+        keyPressed = keyState
+    
+    return button
+
+def check_password(input_password):
+    return ''.join(map(str, input_password)) == PASSWORD
+
+def passwordin():
+    inputPassword = []
+    max_length = len(PASSWORD)  # 설정된 비밀번호 길이에 맞춤
+    attempt_count = 0
+    
+    GPIO.output(YELLOW_LED_PIN, GPIO.HIGH)
+    GPIO.output(RED_LED_PIN, GPIO.LOW)
+    GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+    alert_sound.play()  # 경고음 재생
+    
+    while True:
+        key = getKey()
+        if key > 0:
+            if key <= 10 and len(inputPassword) < max_length:  # 비밀번호 입력
+                inputPassword.append(key)
+                print(f"입력된 숫자: {key}")
+            elif key > 10:  # 엔터 키 등의 종료 조건을 가정
+                print(f"입력된 비밀번호: {inputPassword}")
+                
+                if check_password(inputPassword):
+                    print("비밀번호가 맞습니다.")
+                    return 1  # 비밀번호 일치, 신호 1 반환
+                else:
+                    print("비밀번호가 틀렸습니다.")
+                    inputPassword = []  # 비밀번호 입력 배열 초기화
+                    attempt_count += 1
+                    if attempt_count >= 5:
+                        print("최대 시도 횟수 초과!")
+                        return 0  # 신호 0 반환
+            else:
+                print("비밀번호가 너무 깁니다. 초기화합니다.")
+                inputPassword = []  # 비밀번호 입력 배열 초기화
+
+def activate_system(signal):
+    if signal == 0:
+        GPIO.output(DOORLOCK_PIN, GPIO.LOW)  # 도어락 잠금
+        GPIO.output(RED_LED_PIN, GPIO.HIGH)  # 빨간 LED 켜기
+        GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+        GPIO.output(YELLOW_LED_PIN, GPIO.LOW)
+    elif signal == 1:
+        GPIO.output(DOORLOCK_PIN, GPIO.HIGH)  # 도어락 열림
+        GPIO.output(RED_LED_PIN, GPIO.LOW) 
+        GPIO.output(GREEN_LED_PIN, GPIO.HIGH)  # 초록 LED 켜기
+        GPIO.output(YELLOW_LED_PIN, GPIO.LOW)
+
+try:
+    # 시스템 초기화 상태: 도어락 잠금
+    GPIO.output(DOORLOCK_PIN, GPIO.LOW)
+    
+    while True:
+        signal = passwordin()  # 비밀번호 입력 및 확인
+        activate_system(signal)
+        time.sleep(2)  # 시스템 유지 시간
+
+except KeyboardInterrupt:
+    print("사용자에 의한 종료")
+
+finally:
+    pygame.mixer.quit()
+    GPIO.cleanup()
